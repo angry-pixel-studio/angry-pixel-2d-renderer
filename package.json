@@ -1,0 +1,37 @@
+{
+    "name": "angry-pixel-2d-renderer",
+    "version": "1.0.0",
+    "description": "WebGL rendering engine",
+    "main": "dist/index.js",
+    "module": "dist/index.es.js",
+    "files": [
+        "dist"
+    ],
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "start": "webpack serve --mode development",
+        "build": "webpack --mode production",
+        "dev": "webpack --mode development",
+        "lint": "eslint . --ext .ts",
+        "lint-and-fix": "eslint . --ext .ts --fix",
+        "prettier-format": "prettier --write 'src/**/*.{ts,js,css,html}'",
+        "prettier-check": "prettier --check 'src/**/*.{ts,js,css,html}'"
+    },
+    "author": "Mauro Cristy <maurocristy@gmail.com>",
+    "license": "MIT",
+    "devDependencies": {
+        "@types/gl-matrix": "^3.2.0",
+        "@typescript-eslint/eslint-plugin": "^5.38.0",
+        "@typescript-eslint/parser": "^5.38.0",
+        "eslint": "^8.24.0",
+        "prettier": "^2.7.1",
+        "ts-loader": "^9.4.1",
+        "typescript": "^4.8.3",
+        "webpack": "^5.74.0",
+        "webpack-cli": "^4.10.0",
+        "webpack-dev-server": "^4.11.1"
+    },
+    "dependencies": {
+        "gl-matrix": "^3.4.3"
+    }
+}
