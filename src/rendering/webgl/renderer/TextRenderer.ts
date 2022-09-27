@@ -1,13 +1,14 @@
 import { mat4, ReadonlyVec3 } from "gl-matrix";
-import { Vector2 } from "../../../math/Vector2";
+import { Vector2 } from "angry-pixel-math";
 import { ICameraData } from "../../CameraData";
-import { RenderDataType, RenderLocation } from "../../renderData/RenderData";
-import { ITextRenderData, Orientation } from "../../renderData/TextRenderData";
+import { RenderDataType } from "../../renderData/RenderData";
+import { ITextRenderData, TextOrientation } from "../../renderData/TextRenderData";
 import { hexToRgba } from "../../utils/hexToRgba";
 import { FontAtlas, IFontAtlasFactory } from "../FontAtlasFactory";
 import { IProgramManager } from "../program/ProgramManager";
 import { ITextureManager } from "../texture/TextureManager";
 import { IRenderer } from "./IRenderer";
+import { setProjectionMatrix } from "./utils";
 
 const TEXTURE_CORRECTION = 1;
 const DEFAULT_BITMAP_SIZE = 64;
@@ -16,7 +17,7 @@ const DEFAULT_CHAR_RANGES = [32, 126, 161, 255];
 const DEFAULT_COLOR = "#000000";
 const DEFAULT_LETTER_SPACING = 0;
 const DEFAULT_LINE_SEPARATION = 0;
-const DEFAULT_ORIENTATION = Orientation.Center;
+const DEFAULT_ORIENTATION = TextOrientation.Center;
 const DEFAULT_OPACITY = 1;
 const DEFAULT_ROTATION = 0;
 
@@ -77,27 +78,7 @@ export class TextRenderer implements IRenderer {
             1,
         ]);
 
-        this.projectionMatrix = mat4.identity(this.projectionMatrix);
-        mat4.ortho(
-            this.projectionMatrix,
-            cameraData.viewportRect.x,
-            cameraData.viewportRect.x1,
-            cameraData.viewportRect.y,
-            cameraData.viewportRect.y1,
-            -1,
-            1
-        );
-
-        if (renderData.location === RenderLocation.WorldSpace) {
-            mat4.scale(this.projectionMatrix, this.projectionMatrix, [cameraData.zoom ?? 1, cameraData.zoom ?? 1, 1]);
-            mat4.translate(this.projectionMatrix, this.projectionMatrix, [
-                -cameraData.positionInWorldSpace.x,
-                -cameraData.positionInWorldSpace.y,
-                0,
-            ]);
-        } else {
-            mat4.translate(this.projectionMatrix, this.projectionMatrix, [0, 0, 0]);
-        }
+        setProjectionMatrix(this.projectionMatrix, cameraData, renderData.location);
 
         this.gl.uniformMatrix4fv(this.programManager.projectionMatrixUniform, false, this.projectionMatrix);
         this.gl.uniformMatrix4fv(this.programManager.modelMatrixUniform, false, this.modelMatrix);
@@ -218,11 +199,12 @@ export class TextRenderer implements IRenderer {
 
     private getTranslationForOrientation(renderData: ITextRenderData): ReadonlyVec3 {
         return [
-            renderData.position.x + (renderData.orientation === Orientation.Center ? 0 : this.posVerticesSize.x / 2),
+            renderData.position.x +
+                (renderData.orientation === TextOrientation.Center ? 0 : this.posVerticesSize.x / 2),
             renderData.position.y +
-                (renderData.orientation === Orientation.RightDown
+                (renderData.orientation === TextOrientation.RightDown
                     ? -this.posVerticesSize.y / 2
-                    : renderData.orientation === Orientation.RightUp
+                    : renderData.orientation === TextOrientation.RightUp
                     ? this.posVerticesSize.y
                     : 0),
             0,

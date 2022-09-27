@@ -1,13 +1,12 @@
 import { mat4 } from "gl-matrix";
-import { Rectangle } from "../../../math/Rectangle";
-import { Vector2 } from "../../../math/Vector2";
 import { ICameraData } from "../../CameraData";
-import { RenderDataType, RenderLocation } from "../../renderData/RenderData";
+import { RenderDataType } from "../../renderData/RenderData";
 import { ISpriteRenderData } from "../../renderData/SpriteRenderData";
 import { hexToRgba } from "../../utils/hexToRgba";
 import { IProgramManager } from "../program/ProgramManager";
 import { ITextureManager } from "../texture/TextureManager";
 import { IRenderer } from "./IRenderer";
+import { setProjectionMatrix } from "./utils";
 
 export class SpriteRenderer implements IRenderer {
     public readonly type: RenderDataType.Sprite;
@@ -85,27 +84,7 @@ export class SpriteRenderer implements IRenderer {
             ]);
         }
 
-        this.projectionMatrix = mat4.identity(this.projectionMatrix);
-        mat4.ortho(
-            this.projectionMatrix,
-            cameraData.viewportRect.x,
-            cameraData.viewportRect.x1,
-            cameraData.viewportRect.y,
-            cameraData.viewportRect.y1,
-            -1,
-            1
-        );
-
-        if (renderData.location === RenderLocation.WorldSpace) {
-            mat4.scale(this.projectionMatrix, this.projectionMatrix, [cameraData.zoom ?? 1, cameraData.zoom ?? 1, 1]);
-            mat4.translate(this.projectionMatrix, this.projectionMatrix, [
-                -cameraData.positionInWorldSpace.x,
-                -cameraData.positionInWorldSpace.y,
-                0,
-            ]);
-        } else {
-            mat4.translate(this.projectionMatrix, this.projectionMatrix, [0, 0, 0]);
-        }
+        setProjectionMatrix(this.projectionMatrix, cameraData, renderData.location);
 
         this.gl.uniformMatrix4fv(this.programManager.projectionMatrixUniform, false, this.projectionMatrix);
         this.gl.uniformMatrix4fv(this.programManager.modelMatrixUniform, false, this.modelMatrix);
@@ -132,8 +111,8 @@ export class SpriteRenderer implements IRenderer {
         this.gl.uniform1i(this.programManager.useMaskColorUniform, renderData.maskColor ? 1 : 0);
         if (renderData.maskColor) {
             const { r, g, b } = hexToRgba(renderData.maskColor);
-            this.gl.uniform4f(this.programManager.maskColorUniform, r, g, b, renderData.alpha);
-            this.gl.uniform1f(this.programManager.maskColorMixUniform, renderData.maskColorMix ?? 0);
+            this.gl.uniform4f(this.programManager.maskColorUniform, r, g, b, renderData.alpha ?? 1);
+            this.gl.uniform1f(this.programManager.maskColorMixUniform, renderData.maskColorMix ?? 1);
         }
 
         this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);

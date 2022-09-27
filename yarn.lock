@@ -550,6 +550,11 @@ ajv@^8.0.0, ajv@^8.8.0:
     require-from-string "^2.0.2"
     uri-js "^4.2.2"
 
+angry-pixel-math@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/angry-pixel-math/-/angry-pixel-math-1.0.0.tgz#ca71d6785d4cdf2f398459f776467df96bbc18d8"
+  integrity sha512-rALJ8fYh00hp2m+N3ly1G1wqCScSrVLdADWgTMcE8hCDQ7hoaEN5C8eJPE7/zuMl7ewf9TDuwAlJSez89jOWog==
+
 ansi-html-community@^0.0.8:
   version "0.0.8"
   resolved "https://registry.yarnpkg.com/ansi-html-community/-/ansi-html-community-0.0.8.tgz#69fbc4d6ccbe383f9736934ae34c3f8290f1bf41"

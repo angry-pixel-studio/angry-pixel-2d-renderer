@@ -4,7 +4,7 @@ export interface ISpriteRenderData extends IRenderData {
     image: HTMLImageElement;
     width: number;
     height: number;
-    smooth: boolean;
+    smooth?: boolean;
     slice?: Slice;
     flipHorizontal?: boolean;
     flipVertical?: boolean;
