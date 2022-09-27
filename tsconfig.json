@@ -3,8 +3,9 @@
     "target": "ES6",
     "module": "ES2015",
     "lib": [ "es2020", "dom" ],
-    "declaration": false,
-    "rootDir": "src",
+    "declaration": true,
+    "outDir": "lib/",
+    "rootDir": "src/",
     "strict": true,
     "strictNullChecks": false,
     "sourceMap": true,
@@ -12,5 +13,7 @@
     "suppressExcessPropertyErrors": true,
     "esModuleInterop": true,
     "resolveJsonModule": true
-  }
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "lib"]
 }

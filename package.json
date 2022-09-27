@@ -2,34 +2,40 @@
     "name": "angry-pixel-2d-renderer",
     "version": "1.0.0",
     "description": "WebGL rendering engine",
-    "main": "dist/index.js",
-    "module": "dist/index.es.js",
-    "files": [
-        "dist"
-    ],
-    "types": "dist/index.d.ts",
+    "main": "lib/index.js",
+    "types": "lib/index.d.ts",
+    "module": "lib/index.esm.js",
     "scripts": {
-        "start": "webpack serve --mode development",
-        "build": "webpack --mode production",
-        "dev": "webpack --mode development",
+        "build": "rollup -c",
+        "clean": "tsc --build --clean",
+        "prepare": "npm run build",
         "lint": "eslint . --ext .ts",
         "lint-and-fix": "eslint . --ext .ts --fix",
-        "prettier-format": "prettier --write 'src/**/*.{ts,js,css,html}'",
-        "prettier-check": "prettier --check 'src/**/*.{ts,js,css,html}'"
+        "prettier-format": "prettier --write \"src/**/*.{ts,js,css,html}\"",
+        "prettier-check": "prettier --check \"src/**/*.{ts,js,css,html}\""
     },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/angry-pixel-studio/angry-pixel-2d-renderer"
+    },
+    "homepage": "https://github.com/angry-pixel-studio/angry-pixel-2d-renderer",
     "author": "Mauro Cristy <maurocristy@gmail.com>",
     "license": "MIT",
+    "publishConfig": {
+        "access": "public"
+    },
     "devDependencies": {
+        "@rollup/plugin-commonjs": "^22.0.2",
+        "@rollup/plugin-node-resolve": "^14.1.0",
         "@types/gl-matrix": "^3.2.0",
         "@typescript-eslint/eslint-plugin": "^5.38.0",
         "@typescript-eslint/parser": "^5.38.0",
         "eslint": "^8.24.0",
         "prettier": "^2.7.1",
-        "ts-loader": "^9.4.1",
-        "typescript": "^4.8.3",
-        "webpack": "^5.74.0",
-        "webpack-cli": "^4.10.0",
-        "webpack-dev-server": "^4.11.1"
+        "rollup": "^2.79.1",
+        "rollup-plugin-terser": "^7.0.2",
+        "rollup-plugin-typescript2": "^0.34.0",
+        "typescript": "^4.8.3"
     },
     "dependencies": {
         "angry-pixel-math": "^1.0.0",
