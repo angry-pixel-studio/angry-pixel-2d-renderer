@@ -1,7 +1,7 @@
 import { mat4 } from "gl-matrix";
 import { ICameraData } from "../../CameraData";
 import { RenderDataType } from "../../renderData/RenderData";
-import { ITilemapRenderData } from "../../renderData/TilemapRenderData";
+import { ICulledTilemapRenderData } from "../../renderData/TilemapRenderData";
 import { hexToRgba } from "../../utils/hexToRgba";
 import { IProgramManager } from "../program/ProgramManager";
 import { ITextureManager } from "../texture/TextureManager";
@@ -33,7 +33,7 @@ export class TilemapRenderer implements IRenderer {
         this.textureMatrix = mat4.create();
     }
 
-    public render(renderData: ITilemapRenderData, cameraData: ICameraData, lastRender?: RenderDataType): void {
+    public render(renderData: ICulledTilemapRenderData, cameraData: ICameraData, lastRender?: RenderDataType): void {
         this.generateVertices(renderData);
 
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.programManager.positionBuffer);
@@ -43,12 +43,13 @@ export class TilemapRenderer implements IRenderer {
         this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(this.texVertices), this.gl.DYNAMIC_DRAW);
 
         this.modelMatrix = mat4.identity(this.modelMatrix);
-        mat4.translate(this.modelMatrix, this.modelMatrix, [
+        /*mat4.translate(this.modelMatrix, this.modelMatrix, [
             renderData.position.x - (renderData.tilemap.width * renderData.tilemap.tileWidth) / 2,
-            renderData.position.y +
-                (Math.floor(renderData.tiles.length / renderData.tilemap.width) * renderData.tilemap.tileHeight) / 2,
+            renderData.position.y -
+                (((renderData.tiles.length / renderData.tilemap.width) | 0) * renderData.tilemap.tileHeight) / 2,
             0,
-        ]);
+        ]);*/
+        mat4.translate(this.modelMatrix, this.modelMatrix, [renderData.position.x, renderData.position.y, 0]);
         mat4.rotateZ(this.modelMatrix, this.modelMatrix, renderData.rotation ?? 0);
         mat4.scale(this.modelMatrix, this.modelMatrix, [
             renderData.tilemap.tileWidth,
@@ -63,7 +64,7 @@ export class TilemapRenderer implements IRenderer {
             1,
         ]);
 
-        setProjectionMatrix(this.projectionMatrix, cameraData, renderData.location);
+        setProjectionMatrix(this.projectionMatrix, this.gl, cameraData, renderData.location);
 
         this.gl.uniformMatrix4fv(this.programManager.projectionMatrixUniform, false, this.projectionMatrix);
         this.gl.uniformMatrix4fv(this.programManager.modelMatrixUniform, false, this.modelMatrix);
@@ -92,26 +93,24 @@ export class TilemapRenderer implements IRenderer {
         this.gl.drawArrays(this.gl.TRIANGLES, 0, this.posVertices.length / 2);
     }
 
-    private generateVertices(renderData: ITilemapRenderData): void {
+    private generateVertices2(renderData: ICulledTilemapRenderData): void {
         this.posVertices = [];
         this.texVertices = [];
 
-        let tmy = 0;
-
-        renderData.tiles.forEach((tilesetTile, tilemapTile) => {
+        renderData.culledTiles.forEach((tilesetTile, tilemapTile) => {
             if (tilesetTile === 0) return;
 
             const tmx = tilemapTile % renderData.tilemap.width;
-            tmy = tilemapTile > 0 && tmx === 0 ? tmy - 1 : tmy;
+            const tmy = -(tilemapTile / renderData.tilemap.width) | 0;
 
             // prettier-ignore
             this.posVertices.push(
-                tmx, tmy-1,
-                tmx+1, tmy-1,
+                tmx, tmy - 1,
+                tmx + 1, tmy - 1,
                 tmx, tmy,
                 tmx, tmy,
-                tmx+1, tmy-1,
-                tmx+1, tmy
+                tmx + 1, tmy - 1,
+                tmx + 1, tmy
             )
 
             const tsx = (tilesetTile - 1) % renderData.tileset.width;
@@ -119,11 +118,48 @@ export class TilemapRenderer implements IRenderer {
 
             // prettier-ignore
             this.texVertices.push( 
-                tsx, tsy  +1,
-                tsx + 1, tsy  +1,
+                tsx, tsy + 1,
+                tsx + 1, tsy + 1,
                 tsx, tsy,
                 tsx, tsy,
-                tsx + 1, tsy  +1,
+                tsx + 1, tsy + 1,
+                tsx + 1, tsy
+            );
+        });
+    }
+
+    private generateVertices({ culledTiles, tilemap, tileset }: ICulledTilemapRenderData): void {
+        this.posVertices = [];
+        this.texVertices = [];
+
+        const height = (culledTiles.length / tilemap.width) | 0;
+
+        culledTiles.forEach((tilesetTile, tilemapTile) => {
+            if (tilesetTile === 0) return;
+
+            const tmx = (tilemapTile % tilemap.width) - tilemap.width / 2;
+            const tmy = height / 2 - ((tilemapTile / tilemap.width) | 0);
+
+            // prettier-ignore
+            this.posVertices.push(
+                tmx, tmy - 1,
+                tmx + 1, tmy - 1,
+                tmx, tmy,
+                tmx, tmy,
+                tmx + 1, tmy - 1,
+                tmx + 1, tmy
+            )
+
+            const tsx = (tilesetTile - 1) % tileset.width;
+            const tsy = Math.floor((tilesetTile - 1) / tileset.width);
+
+            // prettier-ignore
+            this.texVertices.push( 
+                tsx, tsy + 1,
+                tsx + 1, tsy + 1,
+                tsx, tsy,
+                tsx, tsy,
+                tsx + 1, tsy + 1,
                 tsx + 1, tsy
             );
         });

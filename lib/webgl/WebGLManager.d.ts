@@ -7,7 +7,7 @@ export interface IWebGLManager {
     clearCanvas(hexColor: string): void;
 }
 export declare class WebGLManager implements IWebGLManager {
-    private readonly gl;
+    readonly gl: WebGL2RenderingContext;
     private readonly renderers;
     private lastRender;
     constructor(gl: WebGL2RenderingContext, programManager: IProgramManager, renderers: Map<RenderDataType, IRenderer>);

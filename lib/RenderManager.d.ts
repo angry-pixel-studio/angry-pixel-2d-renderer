@@ -1,4 +1,5 @@
 import { ICameraData } from "./CameraData";
+import { ICullingManager } from "./CullingManager";
 import { IRenderData } from "./renderData/RenderData";
 import { IWebGLManager } from "./webgl/WebGLManager";
 export interface IRenderManager {
@@ -10,9 +11,10 @@ export interface IRenderManager {
 }
 export declare class RenderManager implements IRenderManager {
     private readonly webglManager;
+    private readonly cullingManager;
     private renderData;
     private cameraData;
-    constructor(webglManager: IWebGLManager);
+    constructor(webglManager: IWebGLManager, cullingManager: ICullingManager);
     addRenderData<T extends IRenderData>(data: T): void;
     addCameraData(data: ICameraData): void;
     render(): void;

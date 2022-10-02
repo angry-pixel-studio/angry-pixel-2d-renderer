@@ -1,3 +1,4 @@
+import { CullingManager } from "./CullingManager";
 import { RenderDataType } from "./renderData/RenderData";
 import { IRenderManager, RenderManager } from "./RenderManager";
 import { ContextManager } from "./webgl/ContextManager";
@@ -44,5 +45,5 @@ export const renderManagerFactory = (canvas: HTMLCanvasElement): IRenderManager 
         ])
     );
 
-    return new RenderManager(webglManager);
+    return new RenderManager(webglManager, new CullingManager(gl));
 };

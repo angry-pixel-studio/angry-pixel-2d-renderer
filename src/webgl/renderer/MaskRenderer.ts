@@ -42,7 +42,7 @@ export class MaskRenderer implements IRenderer {
         mat4.rotateZ(this.modelMatrix, this.modelMatrix, renderData.rotation ?? 0);
         mat4.scale(this.modelMatrix, this.modelMatrix, [renderData.width, renderData.height, 1]);
 
-        setProjectionMatrix(this.projectionMatrix, cameraData, renderData.location);
+        setProjectionMatrix(this.projectionMatrix, this.gl, cameraData, renderData.location);
 
         this.gl.uniformMatrix4fv(this.programManager.projectionMatrixUniform, false, this.projectionMatrix);
         this.gl.uniformMatrix4fv(this.programManager.modelMatrixUniform, false, this.modelMatrix);

@@ -78,7 +78,7 @@ export class TextRenderer implements IRenderer {
             1,
         ]);
 
-        setProjectionMatrix(this.projectionMatrix, cameraData, renderData.location);
+        setProjectionMatrix(this.projectionMatrix, this.gl, cameraData, renderData.location);
 
         this.gl.uniformMatrix4fv(this.programManager.projectionMatrixUniform, false, this.projectionMatrix);
         this.gl.uniformMatrix4fv(this.programManager.modelMatrixUniform, false, this.modelMatrix);
@@ -156,8 +156,8 @@ export class TextRenderer implements IRenderer {
 
                 t.x1 = glyphInfo.x + renderData.bitmapOffset.x;
                 t.y1 = glyphInfo.y + renderData.bitmapOffset.y;
-                t.x2 = glyphInfo.x + glyphInfo.width - TEXTURE_CORRECTION;
-                t.y2 = glyphInfo.y + glyphInfo.height - TEXTURE_CORRECTION;
+                t.x2 = glyphInfo.x + fontAtlas.glyphWidth - TEXTURE_CORRECTION;
+                t.y2 = glyphInfo.y + fontAtlas.glyphHeight - TEXTURE_CORRECTION;
 
                 // prettier-ignore
                 this.posVertices.push(

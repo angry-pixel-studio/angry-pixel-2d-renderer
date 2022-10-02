@@ -10,8 +10,6 @@ export interface ITextRenderData extends IRenderData {
     font: FontFace;
     text: string;
     fontSize: number;
-    width: number;
-    height: number;
     smooth?: boolean;
     color?: string;
     lineSeparation?: number;

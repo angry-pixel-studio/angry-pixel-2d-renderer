@@ -39,7 +39,7 @@ export class FontAtlasFactory implements IFontAtlasFactory {
     }
 
     private renderAtlas(fontFace: FontFace): FontAtlas {
-        const fontAtlas: FontAtlas = new FontAtlas(fontFace);
+        const fontAtlas: FontAtlas = new FontAtlas(fontFace, this.bitmapSize, this.bitmapSize);
 
         fontAtlas.canvas.width = Math.round(Math.sqrt(this.chars.length)) * this.bitmapSize;
         fontAtlas.canvas.height = fontAtlas.canvas.width;
@@ -60,8 +60,6 @@ export class FontAtlasFactory implements IFontAtlasFactory {
             fontAtlas.glyphsData.set(this.chars[i], {
                 x: x,
                 y: y,
-                width: this.bitmapSize,
-                height: this.bitmapSize,
             });
 
             if ((x += this.bitmapSize) > fontAtlas.canvas.width - this.bitmapSize) {
@@ -78,12 +76,14 @@ export class FontAtlas {
     public readonly canvas: HTMLCanvasElement = document.createElement("canvas");
     public readonly glyphsData: Map<string, GlyphData> = new Map<string, GlyphData>();
 
-    constructor(public readonly fontFace: FontFace) {}
+    constructor(
+        public readonly fontFace: FontFace,
+        public readonly glyphWidth: number,
+        public readonly glyphHeight: number
+    ) {}
 }
 
 export interface GlyphData {
     x: number;
     y: number;
-    width: number;
-    height: number;
 }

@@ -16,13 +16,13 @@ export declare class FontAtlasFactory implements IFontAtlasFactory {
 }
 export declare class FontAtlas {
     readonly fontFace: FontFace;
+    readonly glyphWidth: number;
+    readonly glyphHeight: number;
     readonly canvas: HTMLCanvasElement;
     readonly glyphsData: Map<string, GlyphData>;
-    constructor(fontFace: FontFace);
+    constructor(fontFace: FontFace, glyphWidth: number, glyphHeight: number);
 }
 export interface GlyphData {
     x: number;
     y: number;
-    width: number;
-    height: number;
 }

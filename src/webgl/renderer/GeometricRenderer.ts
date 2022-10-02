@@ -72,7 +72,7 @@ export class GeometricRenderer implements IRenderer {
         mat4.translate(this.modelMatrix, this.modelMatrix, [renderData.position.x, renderData.position.y, 0]);
         mat4.rotateZ(this.modelMatrix, this.modelMatrix, renderData.rotation ?? 0);
 
-        setProjectionMatrix(this.projectionMatrix, cameraData, renderData.location);
+        setProjectionMatrix(this.projectionMatrix, this.gl, cameraData, renderData.location);
 
         this.gl.uniformMatrix4fv(this.programManager.projectionMatrixUniform, false, this.projectionMatrix);
         this.gl.uniformMatrix4fv(this.programManager.modelMatrixUniform, false, this.modelMatrix);
@@ -113,7 +113,7 @@ export class GeometricRenderer implements IRenderer {
         mat4.translate(this.modelMatrix, this.modelMatrix, [renderData.position.x, renderData.position.y, 0]);
         mat4.scale(this.modelMatrix, this.modelMatrix, [renderData.radius, renderData.radius, 1]);
 
-        setProjectionMatrix(this.projectionMatrix, cameraData, renderData.location);
+        setProjectionMatrix(this.projectionMatrix, this.gl, cameraData, renderData.location);
 
         this.gl.uniformMatrix4fv(this.programManager.projectionMatrixUniform, false, this.projectionMatrix);
         this.gl.uniformMatrix4fv(this.programManager.modelMatrixUniform, false, this.modelMatrix);

@@ -1,6 +1,6 @@
 import { ICameraData } from "../../CameraData";
 import { RenderDataType } from "../../renderData/RenderData";
-import { ITilemapRenderData } from "../../renderData/TilemapRenderData";
+import { ICulledTilemapRenderData } from "../../renderData/TilemapRenderData";
 import { IProgramManager } from "../program/ProgramManager";
 import { ITextureManager } from "../texture/TextureManager";
 import { IRenderer } from "./IRenderer";
@@ -16,6 +16,7 @@ export declare class TilemapRenderer implements IRenderer {
     private texVertices;
     private lastTexture;
     constructor(gl: WebGL2RenderingContext, programManager: IProgramManager, textureManager: ITextureManager);
-    render(renderData: ITilemapRenderData, cameraData: ICameraData, lastRender?: RenderDataType): void;
+    render(renderData: ICulledTilemapRenderData, cameraData: ICameraData, lastRender?: RenderDataType): void;
+    private generateVertices2;
     private generateVertices;
 }

@@ -29,3 +29,6 @@ export interface ITilemapRenderData extends IRenderData {
     textureCorrection?: number;
     orientation?: TilemapOrientation;
 }
+export interface ICulledTilemapRenderData extends ITilemapRenderData {
+    culledTiles: number[];
+}

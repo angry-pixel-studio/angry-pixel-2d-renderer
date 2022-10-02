@@ -84,7 +84,7 @@ export class SpriteRenderer implements IRenderer {
             ]);
         }
 
-        setProjectionMatrix(this.projectionMatrix, cameraData, renderData.location);
+        setProjectionMatrix(this.projectionMatrix, this.gl, cameraData, renderData.location);
 
         this.gl.uniformMatrix4fv(this.programManager.projectionMatrixUniform, false, this.projectionMatrix);
         this.gl.uniformMatrix4fv(this.programManager.modelMatrixUniform, false, this.modelMatrix);

@@ -13,7 +13,7 @@ export class WebGLManager implements IWebGLManager {
     private lastRender: RenderDataType;
 
     constructor(
-        private readonly gl: WebGL2RenderingContext,
+        public readonly gl: WebGL2RenderingContext,
         programManager: IProgramManager,
         private readonly renderers: Map<RenderDataType, IRenderer>
     ) {
