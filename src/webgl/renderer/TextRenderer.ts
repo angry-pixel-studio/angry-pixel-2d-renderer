@@ -1,7 +1,7 @@
 import { mat4, ReadonlyVec3 } from "gl-matrix";
 import { Vector2 } from "angry-pixel-math";
 import { ICameraData } from "../../CameraData";
-import { RenderDataType } from "../../renderData/RenderData";
+import { RenderDataType, RenderLocation } from "../../renderData/RenderData";
 import { ITextRenderData, TextOrientation } from "../../renderData/TextRenderData";
 import { hexToRgba } from "../../utils/hexToRgba";
 import { FontAtlas, IFontAtlasFactory } from "../FontAtlasFactory";
@@ -10,9 +10,9 @@ import { ITextureManager } from "../texture/TextureManager";
 import { IRenderer } from "./IRenderer";
 import { setProjectionMatrix } from "./Utils";
 
-const TEXTURE_CORRECTION = 1;
-const DEFAULT_BITMAP_SIZE = 64;
-const DEFAULT_BITMAP_OFFSET = new Vector2();
+const DEFAULT_BITMAP_FONT_SIZE = 64;
+const DEFAULT_BITMAP_MARGIN = new Vector2();
+const DEFAULT_BITMAP_SPACING = new Vector2();
 const DEFAULT_CHAR_RANGES = [32, 126, 161, 255];
 const DEFAULT_COLOR = "#000000";
 const DEFAULT_LETTER_SPACING = 0;
@@ -32,10 +32,11 @@ export class TextRenderer implements IRenderer {
     // vertices
     private posVertices: number[] = [];
     private texVertices: number[] = [];
-    private posVerticesSize: Vector2 = new Vector2();
 
     // cache
     private lastTexture: WebGLTexture = null;
+    private textSize: Vector2 = new Vector2();
+    private modelPosition: Vector2 = new Vector2();
 
     constructor(
         private readonly gl: WebGL2RenderingContext,
@@ -54,9 +55,9 @@ export class TextRenderer implements IRenderer {
         this.setDefaultValues(renderData);
 
         const fontAtlas = this.fontAtlasFactory.getOrCreate(
-            renderData.charRanges,
+            renderData.bitmap.charRanges,
             renderData.font,
-            renderData.bitmapSize
+            renderData.bitmap.fontSize
         );
 
         this.generateTextVertices(fontAtlas, renderData);
@@ -68,15 +69,18 @@ export class TextRenderer implements IRenderer {
         this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(this.texVertices), this.gl.DYNAMIC_DRAW);
 
         this.modelMatrix = mat4.identity(this.modelMatrix);
-        mat4.translate(this.modelMatrix, this.modelMatrix, this.getTranslationForOrientation(renderData));
-        mat4.rotateZ(this.modelMatrix, this.modelMatrix, renderData.rotation);
+        this.setPositionFromOrientation(renderData);
+        Vector2.round(
+            this.modelPosition,
+            renderData.location === RenderLocation.WorldSpace
+                ? Vector2.subtract(this.modelPosition, this.modelPosition, cameraData.position)
+                : this.modelPosition
+        );
+        mat4.translate(this.modelMatrix, this.modelMatrix, [this.modelPosition.x, this.modelPosition.y, 0]);
+        mat4.rotateZ(this.modelMatrix, this.modelMatrix, renderData.rotation ?? 0);
+        mat4.scale(this.modelMatrix, this.modelMatrix, [renderData.fontSize, renderData.fontSize, 1]);
 
         this.textureMatrix = mat4.identity(this.textureMatrix);
-        mat4.scale(this.textureMatrix, this.textureMatrix, [
-            1 / fontAtlas.canvas.width,
-            1 / fontAtlas.canvas.height,
-            1,
-        ]);
 
         setProjectionMatrix(this.projectionMatrix, this.gl, cameraData, renderData.location);
 
@@ -91,7 +95,7 @@ export class TextRenderer implements IRenderer {
         }
 
         const texture = this.textureManager.getOrCreateTextureFromCanvas(
-            fontAtlas.fontFace.family,
+            fontAtlas.fontFaceFamily,
             fontAtlas.canvas,
             renderData.smooth
         );
@@ -115,9 +119,20 @@ export class TextRenderer implements IRenderer {
     }
 
     private setDefaultValues(renderData: ITextRenderData): void {
-        renderData.bitmapOffset = renderData.bitmapOffset ?? DEFAULT_BITMAP_OFFSET;
-        renderData.bitmapSize = renderData.bitmapSize ?? DEFAULT_BITMAP_SIZE;
-        renderData.charRanges = renderData.charRanges ?? DEFAULT_CHAR_RANGES;
+        if (renderData.bitmap) {
+            renderData.bitmap.margin = renderData.bitmap.margin ?? DEFAULT_BITMAP_MARGIN;
+            renderData.bitmap.spacing = renderData.bitmap.spacing ?? DEFAULT_BITMAP_SPACING;
+            renderData.bitmap.fontSize = renderData.bitmap.fontSize ?? DEFAULT_BITMAP_FONT_SIZE;
+            renderData.bitmap.charRanges = renderData.bitmap.charRanges ?? DEFAULT_CHAR_RANGES;
+        } else {
+            renderData.bitmap = {
+                margin: DEFAULT_BITMAP_MARGIN,
+                spacing: DEFAULT_BITMAP_SPACING,
+                fontSize: DEFAULT_BITMAP_FONT_SIZE,
+                charRanges: DEFAULT_CHAR_RANGES,
+            };
+        }
+
         renderData.color = renderData.color ?? DEFAULT_COLOR;
         renderData.letterSpacing = renderData.letterSpacing ?? DEFAULT_LETTER_SPACING;
         renderData.lineSeparation = renderData.lineSeparation ?? DEFAULT_LINE_SEPARATION;
@@ -126,88 +141,82 @@ export class TextRenderer implements IRenderer {
         renderData.rotation = renderData.rotation ?? DEFAULT_ROTATION;
     }
 
-    private generateTextVertices(fontAtlas: FontAtlas, renderData: ITextRenderData): void {
+    private generateTextVertices(
+        fontAtlas: FontAtlas,
+        { text, fontSize, bitmap, letterSpacing, lineSeparation }: ITextRenderData
+    ): void {
         this.posVertices = [];
         this.texVertices = [];
 
-        const d = this.getDimensions(renderData);
-        const p = { x1: -d.width / 2, y1: d.height / 2 - renderData.fontSize, x2: 0, y2: d.height / 2 };
-        const t = { x1: 0, y1: 0, x2: 0, y2: 0 };
+        let x = 0;
+        let y = 0;
 
-        for (let i = 0; i < renderData.text.length; i++) {
-            const letter = renderData.text[i];
+        let maxWidth = 0;
+
+        letterSpacing /= fontSize;
+        lineSeparation /= fontSize;
+
+        for (let i = 0; i < text.length; i++) {
+            const letter = text[i];
 
             if (letter === "\n") {
-                p.y1 -= renderData.fontSize + renderData.lineSeparation;
-                p.y2 = p.y1 + renderData.fontSize;
-                p.x1 = -d.width / 2;
+                maxWidth = Math.max(maxWidth, x);
+                x = 0;
+                y -= 1 + lineSeparation;
+
                 continue;
             }
 
-            if (letter === " ") {
-                p.x1 += renderData.fontSize + renderData.letterSpacing;
-                continue;
-            }
+            const glyph = fontAtlas.glyphs.get(letter);
 
-            const glyphInfo = fontAtlas.glyphsData.get(letter);
-
-            if (glyphInfo) {
-                p.x2 = p.x1 + renderData.fontSize;
-
-                t.x1 = glyphInfo.x + renderData.bitmapOffset.x;
-                t.y1 = glyphInfo.y + renderData.bitmapOffset.y;
-                t.x2 = glyphInfo.x + fontAtlas.glyphWidth - TEXTURE_CORRECTION;
-                t.y2 = glyphInfo.y + fontAtlas.glyphHeight - TEXTURE_CORRECTION;
+            if (glyph) {
+                const letterWidth = glyph.width / fontAtlas.bitmapFontSize;
 
                 // prettier-ignore
                 this.posVertices.push(
-                    p.x1, p.y1,
-                    p.x2, p.y1,
-                    p.x1, p.y2,
-                    p.x1, p.y2,
-                    p.x2, p.y1,
-                    p.x2, p.y2
-                );
+                    x, y - 1,
+                    x + letterWidth, y - 1,
+                    x, y,
+                    x, y,
+                    x + letterWidth, y - 1,
+                    x + letterWidth, y
+                )
+
+                const gx = (glyph.id % fontAtlas.gridSize) * fontAtlas.bitmapFontSize;
+                const gy = ((glyph.id / fontAtlas.gridSize) | 0) * fontAtlas.bitmapFontSize;
+
+                const u1 = (gx + bitmap.margin.x) / fontAtlas.canvas.width;
+                const v1 = (gy + bitmap.margin.y) / fontAtlas.canvas.width;
+                const u2 = (gx + glyph.width + bitmap.spacing.x) / fontAtlas.canvas.width;
+                const v2 = (gy + fontAtlas.bitmapFontSize + bitmap.spacing.y) / fontAtlas.canvas.width;
 
                 // prettier-ignore
-                this.texVertices.push(
-                    t.x1, t.y2,
-                    t.x2, t.y2,
-                    t.x1, t.y1,
-                    t.x1, t.y1,
-                    t.x2, t.y2,
-                    t.x2, t.y1
+                this.texVertices.push( 
+                    u1, v2,
+                    u2, v2,
+                    u1, v1,
+                    u1, v1,
+                    u2, v2,
+                    u2, v1
                 );
-            }
 
-            p.x1 += renderData.fontSize + renderData.letterSpacing;
+                x += letterWidth + letterSpacing;
+            }
         }
 
-        this.posVerticesSize.set(d.width, d.height);
+        this.textSize.set(Math.max(maxWidth, x) * fontSize, Math.abs(y - 1) * fontSize);
     }
 
-    private getDimensions(renderData: ITextRenderData): { width: number; height: number } {
-        return renderData.text.split("\n").reduce(
-            (acc, str, idx) => {
-                acc.width = Math.max(acc.width, str.length * (renderData.fontSize + renderData.letterSpacing));
-                acc.height += renderData.fontSize + Math.min(idx, 1) * renderData.lineSeparation;
-                return acc;
-            },
-            { width: 0, height: 0 }
-        );
-    }
-
-    private getTranslationForOrientation(renderData: ITextRenderData): ReadonlyVec3 {
-        return [
-            renderData.position.x +
-                (renderData.orientation === TextOrientation.Center ? 0 : this.posVerticesSize.x / 2),
+    private setPositionFromOrientation(renderData: ITextRenderData): void {
+        this.modelPosition.set(
+            renderData.position.x + (renderData.orientation === TextOrientation.Center ? -this.textSize.x / 2 : 0),
             renderData.position.y +
-                (renderData.orientation === TextOrientation.RightDown
-                    ? -this.posVerticesSize.y / 2
+                (renderData.orientation === TextOrientation.Center ||
+                renderData.orientation === TextOrientation.RightCenter
+                    ? this.textSize.y / 2
                     : renderData.orientation === TextOrientation.RightUp
-                    ? this.posVerticesSize.y
-                    : 0),
-            0,
-        ];
+                    ? this.textSize.y
+                    : 0)
+        );
     }
 }

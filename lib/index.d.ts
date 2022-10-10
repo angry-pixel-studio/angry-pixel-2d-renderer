@@ -6,5 +6,5 @@ export * from "./renderData/MaskRenderData";
 export * from "./renderData/RenderData";
 export * from "./renderData/SpriteRenderData";
 export * from "./renderData/TextRenderData";
-export * from "./renderData/TilemapRenderData";
+export { TilemapOrientation, ITilemapRenderData } from "./renderData/TilemapRenderData";
 export declare const renderManagerFactory: (canvas: HTMLCanvasElement) => IRenderManager;

@@ -1,7 +1,8 @@
+import { Vector2 } from "angry-pixel-math";
 import { mat4 } from "gl-matrix";
 import { ICameraData } from "../../CameraData";
-import { RenderDataType } from "../../renderData/RenderData";
-import { ICulledTilemapRenderData } from "../../renderData/TilemapRenderData";
+import { RenderDataType, RenderLocation } from "../../renderData/RenderData";
+import { IProcessedTilemapData } from "../../renderData/TilemapRenderData";
 import { hexToRgba } from "../../utils/hexToRgba";
 import { IProgramManager } from "../program/ProgramManager";
 import { ITextureManager } from "../texture/TextureManager";
@@ -22,6 +23,17 @@ export class TilemapRenderer implements IRenderer {
 
     // cache
     private lastTexture: WebGLTexture = null;
+    private tileset = {
+        width: 0,
+        tileWidth: 0,
+        tileHeight: 0,
+        texMargin: new Vector2(),
+        texSpacing: new Vector2(),
+        texWidth: 0,
+        texHeight: 0,
+        texCorrection: new Vector2(),
+    };
+    private modelPosition: Vector2 = new Vector2();
 
     constructor(
         private readonly gl: WebGL2RenderingContext,
@@ -33,7 +45,8 @@ export class TilemapRenderer implements IRenderer {
         this.textureMatrix = mat4.create();
     }
 
-    public render(renderData: ICulledTilemapRenderData, cameraData: ICameraData, lastRender?: RenderDataType): void {
+    public render(renderData: IProcessedTilemapData, cameraData: ICameraData, lastRender?: RenderDataType): void {
+        this.processTileset(renderData);
         this.generateVertices(renderData);
 
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.programManager.positionBuffer);
@@ -43,24 +56,24 @@ export class TilemapRenderer implements IRenderer {
         this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(this.texVertices), this.gl.DYNAMIC_DRAW);
 
         this.modelMatrix = mat4.identity(this.modelMatrix);
-        /*mat4.translate(this.modelMatrix, this.modelMatrix, [
-            renderData.position.x - (renderData.tilemap.width * renderData.tilemap.tileWidth) / 2,
-            renderData.position.y -
-                (((renderData.tiles.length / renderData.tilemap.width) | 0) * renderData.tilemap.tileHeight) / 2,
-            0,
-        ]);*/
-        mat4.translate(this.modelMatrix, this.modelMatrix, [renderData.position.x, renderData.position.y, 0]);
+        Vector2.round(
+            this.modelPosition,
+            renderData.location === RenderLocation.WorldSpace
+                ? Vector2.subtract(this.modelPosition, renderData.renderPosition, cameraData.position)
+                : renderData.renderPosition
+        );
+        mat4.translate(this.modelMatrix, this.modelMatrix, [this.modelPosition.x, this.modelPosition.y, 0]);
         mat4.rotateZ(this.modelMatrix, this.modelMatrix, renderData.rotation ?? 0);
         mat4.scale(this.modelMatrix, this.modelMatrix, [
-            renderData.tilemap.tileWidth,
-            renderData.tilemap.tileHeight,
+            renderData.tilemap.tileWidth * (renderData.flipHorizontal ? -1 : 1),
+            renderData.tilemap.tileHeight * (renderData.flipVertical ? -1 : 1),
             1,
         ]);
 
         this.textureMatrix = mat4.identity(this.textureMatrix);
         mat4.scale(this.textureMatrix, this.textureMatrix, [
-            renderData.tileset.tileWidth / renderData.image.naturalWidth,
-            renderData.tileset.tileHeight / renderData.image.naturalHeight,
+            this.tileset.tileWidth / renderData.tileset.image.naturalWidth,
+            this.tileset.tileHeight / renderData.tileset.image.naturalHeight,
             1,
         ]);
 
@@ -72,7 +85,7 @@ export class TilemapRenderer implements IRenderer {
 
         this.gl.enable(this.gl.BLEND);
 
-        const texture = this.textureManager.getOrCreateTextureFromImage(renderData.image, renderData.smooth);
+        const texture = this.textureManager.getOrCreateTextureFromImage(renderData.tileset.image, renderData.smooth);
 
         if (this.lastTexture !== texture || lastRender !== RenderDataType.Tilemap) {
             this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
@@ -80,7 +93,6 @@ export class TilemapRenderer implements IRenderer {
             this.lastTexture = texture;
         }
 
-        this.gl.uniform1i(this.programManager.useMaskColorUniform, 0);
         this.gl.uniform1i(this.programManager.renderTextureUniform, 1);
         this.gl.uniform1f(this.programManager.alphaUniform, renderData.alpha ?? 1);
 
@@ -90,77 +102,81 @@ export class TilemapRenderer implements IRenderer {
             this.gl.uniform4f(this.programManager.tintColorUniform, r, g, b, a);
         }
 
+        this.gl.uniform1i(this.programManager.useMaskColorUniform, renderData.maskColor ? 1 : 0);
+        if (renderData.maskColor) {
+            const { r, g, b } = hexToRgba(renderData.maskColor);
+            this.gl.uniform4f(this.programManager.maskColorUniform, r, g, b, renderData.alpha ?? 1);
+            this.gl.uniform1f(this.programManager.maskColorMixUniform, renderData.maskColorMix ?? 1);
+        }
+
         this.gl.drawArrays(this.gl.TRIANGLES, 0, this.posVertices.length / 2);
     }
 
-    private generateVertices2(renderData: ICulledTilemapRenderData): void {
-        this.posVertices = [];
-        this.texVertices = [];
+    private processTileset({ tileset }: IProcessedTilemapData): void {
+        tileset.margin = tileset.margin ?? new Vector2();
+        tileset.spacing = tileset.spacing ?? new Vector2();
+        tileset.correction = tileset.correction ?? new Vector2();
 
-        renderData.culledTiles.forEach((tilesetTile, tilemapTile) => {
-            if (tilesetTile === 0) return;
+        this.tileset.width = tileset.width;
+        this.tileset.tileWidth = tileset.tileWidth + (tileset.margin.x ?? 0) + (tileset.spacing.x ?? 0);
+        this.tileset.tileHeight = tileset.tileHeight + (tileset.margin.y ?? 0) + (tileset.spacing.y ?? 0);
 
-            const tmx = tilemapTile % renderData.tilemap.width;
-            const tmy = -(tilemapTile / renderData.tilemap.width) | 0;
+        this.tileset.texMargin.set(
+            tileset.margin.x / this.tileset.tileWidth,
+            tileset.margin.y / this.tileset.tileHeight
+        );
+        this.tileset.texSpacing.set(
+            tileset.spacing.x / this.tileset.tileWidth,
+            tileset.spacing.y / this.tileset.tileHeight
+        );
+        this.tileset.texCorrection.set(
+            tileset.correction.x / this.tileset.tileWidth,
+            tileset.correction.y / this.tileset.tileHeight
+        );
 
-            // prettier-ignore
-            this.posVertices.push(
-                tmx, tmy - 1,
-                tmx + 1, tmy - 1,
-                tmx, tmy,
-                tmx, tmy,
-                tmx + 1, tmy - 1,
-                tmx + 1, tmy
-            )
-
-            const tsx = (tilesetTile - 1) % renderData.tileset.width;
-            const tsy = Math.floor((tilesetTile - 1) / renderData.tileset.width);
-
-            // prettier-ignore
-            this.texVertices.push( 
-                tsx, tsy + 1,
-                tsx + 1, tsy + 1,
-                tsx, tsy,
-                tsx, tsy,
-                tsx + 1, tsy + 1,
-                tsx + 1, tsy
-            );
-        });
+        this.tileset.texWidth =
+            1 - this.tileset.texMargin.x - this.tileset.texSpacing.x - 2 * this.tileset.texCorrection.x;
+        this.tileset.texHeight =
+            1 - this.tileset.texMargin.y - this.tileset.texSpacing.y - 2 * this.tileset.texCorrection.y;
     }
 
-    private generateVertices({ culledTiles, tilemap, tileset }: ICulledTilemapRenderData): void {
+    private generateVertices({ culledTiles, tilemap }: IProcessedTilemapData): void {
         this.posVertices = [];
         this.texVertices = [];
 
-        const height = (culledTiles.length / tilemap.width) | 0;
+        const height = Math.floor(culledTiles.length / tilemap.width);
 
         culledTiles.forEach((tilesetTile, tilemapTile) => {
             if (tilesetTile === 0) return;
 
-            const tmx = (tilemapTile % tilemap.width) - tilemap.width / 2;
-            const tmy = height / 2 - ((tilemapTile / tilemap.width) | 0);
+            const px = (tilemapTile % tilemap.width) - tilemap.width / 2;
+            const py = height / 2 - Math.floor(tilemapTile / tilemap.width);
 
             // prettier-ignore
             this.posVertices.push(
-                tmx, tmy - 1,
-                tmx + 1, tmy - 1,
-                tmx, tmy,
-                tmx, tmy,
-                tmx + 1, tmy - 1,
-                tmx + 1, tmy
+                px, py - 1,
+                px + 1, py - 1,
+                px, py,
+                px, py,
+                px + 1, py - 1,
+                px + 1, py
             )
 
-            const tsx = (tilesetTile - 1) % tileset.width;
-            const tsy = Math.floor((tilesetTile - 1) / tileset.width);
+            const tx =
+                ((tilesetTile - 1) % this.tileset.width) + this.tileset.texMargin.x + this.tileset.texCorrection.x;
+            const ty =
+                Math.floor((tilesetTile - 1) / this.tileset.width) +
+                this.tileset.texMargin.y +
+                this.tileset.texCorrection.y;
 
             // prettier-ignore
             this.texVertices.push( 
-                tsx, tsy + 1,
-                tsx + 1, tsy + 1,
-                tsx, tsy,
-                tsx, tsy,
-                tsx + 1, tsy + 1,
-                tsx + 1, tsy
+                tx, ty + this.tileset.texHeight,
+                tx + this.tileset.texWidth, ty + this.tileset.texHeight,
+                tx, ty,
+                tx, ty,
+                tx + this.tileset.texWidth, ty + this.tileset.texHeight,
+                tx + this.tileset.texWidth, ty
             );
         });
     }

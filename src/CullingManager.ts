@@ -2,7 +2,7 @@ import { ICameraData } from "./CameraData";
 import { GeometricShape, IGeometricRenderData } from "./renderData/GeometricRenderData";
 import { IRenderData, RenderDataType, RenderLocation } from "./renderData/RenderData";
 import { ITextRenderData } from "./renderData/TextRenderData";
-import { ICulledTilemapRenderData, ITilemapRenderData } from "./renderData/TilemapRenderData";
+import { IProcessedTilemapData, ITilemapRenderData } from "./renderData/TilemapRenderData";
 
 interface BoundingBox {
     x: number;
@@ -27,12 +27,12 @@ export class CullingManager implements ICullingManager {
 
     constructor(private readonly gl: WebGL2RenderingContext) {}
 
-    private setViewport(cameraData: ICameraData, renderLocation: RenderLocation): void {
+    private setViewport({ position, zoom }: ICameraData, renderLocation: RenderLocation): void {
         if (renderLocation === RenderLocation.WorldSpace) {
-            this.viewport.x = cameraData.position.x - this.gl.canvas.width / 2;
-            this.viewport.x1 = cameraData.position.x + this.gl.canvas.width / 2;
-            this.viewport.y = cameraData.position.y - this.gl.canvas.height / 2;
-            this.viewport.y1 = cameraData.position.y + this.gl.canvas.height / 2;
+            this.viewport.x = position.x - this.gl.canvas.width / zoom / 2;
+            this.viewport.x1 = position.x + this.gl.canvas.width / zoom / 2;
+            this.viewport.y = position.y - this.gl.canvas.height / zoom / 2;
+            this.viewport.y1 = position.y + this.gl.canvas.height / zoom / 2;
         } else {
             this.viewport.x = -this.gl.canvas.width / 2;
             this.viewport.x1 = this.gl.canvas.width / 2;
@@ -60,7 +60,9 @@ export class CullingManager implements ICullingManager {
         rotation,
     }: ITextRenderData): void {
         const width =
-            text.split("\n").reduce((max, line) => Math.max(max, line.length), 0) * (fontSize + (letterSpacing ?? 0));
+            text.split("\n").reduce((max, line) => Math.max(max, line.length), 0) *
+            (fontSize + (letterSpacing ?? 0)) *
+            2;
         const height = text.split("\n").length * (fontSize + (lineSeparation ?? 0));
 
         this.setObjectForResizeable({
@@ -92,17 +94,24 @@ export class CullingManager implements ICullingManager {
         }
     }
 
-    private setObjectForTilemap({ position, tilemap, tiles, rotation }: ITilemapRenderData): void {
+    private setObjectForTilemap(renderData: IProcessedTilemapData): void {
+        renderData.tilemap.height = Math.ceil(renderData.tiles.length / renderData.tilemap.width);
+
         this.setObjectForResizeable({
-            position,
-            width: tilemap.width * tilemap.tileWidth,
-            height: (tiles.length / tilemap.width) * tilemap.tileHeight,
-            rotation,
+            position: renderData.renderPosition,
+            width: renderData.tilemap.width * renderData.tilemap.tileWidth,
+            height: renderData.tilemap.height * renderData.tilemap.tileHeight,
+            rotation: renderData.rotation,
         } as IResizeableRenderData);
     }
 
-    private applyCullingInTiles({ tiles, tilemap: { width, tileWidth, tileHeight } }: ITilemapRenderData): number[] {
-        return tiles.map((data, tile) =>
+    private applyCullingInTiles(renderData: IProcessedTilemapData): void {
+        const {
+            tiles,
+            tilemap: { width, tileWidth, tileHeight },
+        } = renderData;
+
+        renderData.culledTiles = tiles.map((data, tile) =>
             this.viewport.x1 >= this.object.x + (tile % width) * tileWidth &&
             this.viewport.x <= this.object.x + (tile % width) * tileWidth + tileWidth &&
             this.viewport.y1 >= this.object.y1 - (((tile / width) | 0) * tileHeight + tileHeight) &&
@@ -127,7 +136,7 @@ export class CullingManager implements ICullingManager {
                 this.setObjectForText(renderData as ITextRenderData);
                 break;
             case RenderDataType.Tilemap:
-                this.setObjectForTilemap(renderData as ITilemapRenderData);
+                this.setObjectForTilemap(renderData as IProcessedTilemapData);
                 break;
         }
 
@@ -143,9 +152,7 @@ export class CullingManager implements ICullingManager {
         return renderData.filter((data) => {
             if (this.isInViewPort(data, cameraData)) {
                 if (data.type === RenderDataType.Tilemap) {
-                    (data as ICulledTilemapRenderData).culledTiles = this.applyCullingInTiles(
-                        data as ITilemapRenderData
-                    );
+                    this.applyCullingInTiles(data as IProcessedTilemapData);
                 }
 
                 return true;

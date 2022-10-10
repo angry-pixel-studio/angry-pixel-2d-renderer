@@ -13,6 +13,7 @@ export declare class GeometricRenderer implements IRenderer {
     private readonly vertices;
     private readonly circumferenceVertices;
     private lastVertices;
+    private modelPosition;
     constructor(gl: WebGL2RenderingContext, programManager: IProgramManager);
     render(renderData: IGeometricRenderData, cameraData: ICameraData, lastRender?: RenderDataType): void;
     private renderLines;

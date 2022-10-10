@@ -15,6 +15,7 @@ export declare class SpriteRenderer implements IRenderer {
     private posVertices;
     private texVertices;
     private lastTexture;
+    private modelPosition;
     constructor(gl: WebGL2RenderingContext, programManager: IProgramManager, textureManager: ITextureManager);
     render(renderData: ISpriteRenderData, cameraData: ICameraData, lastRender?: RenderDataType): void;
 }

@@ -1,6 +1,8 @@
 import { ICameraData } from "./CameraData";
 import { ICullingManager } from "./CullingManager";
-import { IRenderData } from "./renderData/RenderData";
+import { IRenderData, RenderDataType } from "./renderData/RenderData";
+import { ITilemapRenderData } from "./renderData/TilemapRenderData";
+import { processTilemapRenderData } from "./Utils";
 import { IWebGLManager } from "./webgl/WebGLManager";
 
 export interface IRenderManager {
@@ -39,6 +41,11 @@ export class RenderManager implements IRenderManager {
                 this.renderData
                     .filter((renderData) => cameraData.layers.includes(renderData.layer))
                     .sort((a, b) => cameraData.layers.indexOf(a.layer) - cameraData.layers.indexOf(b.layer))
+                    .map((renderData) =>
+                        renderData.type === RenderDataType.Tilemap
+                            ? processTilemapRenderData(renderData as ITilemapRenderData)
+                            : renderData
+                    )
             )
             .forEach((renderData) => this.webglManager.render(renderData, cameraData));
     }

@@ -1,28 +1,28 @@
 export interface IFontAtlasFactory {
-    hasFontAtlas(fontFace: FontFace): boolean;
-    getFontAtlas(fontFace: FontFace): FontAtlas;
-    getOrCreate(charRanges: number[], fontFace: FontFace, bitmapSize: number): FontAtlas;
-    create(charRanges: number[], fontFace: FontFace, bitmapSize: number): FontAtlas;
+    hasFontAtlas(fontFace: FontFace | string): boolean;
+    getFontAtlas(fontFace: FontFace | string): FontAtlas;
+    getOrCreate(charRanges: number[], fontFace: FontFace | string, bitmapSize: number): FontAtlas;
+    create(charRanges: number[], fontFace: FontFace | string, bitmapSize: number): FontAtlas;
 }
 export declare class FontAtlasFactory implements IFontAtlasFactory {
     private bitmapSize;
     private chars;
     private fontAtlas;
-    hasFontAtlas(fontFace: FontFace): boolean;
-    getFontAtlas(fontFace: FontFace): FontAtlas;
-    getOrCreate(charRanges: number[], fontFace: FontFace, bitmapSize: number): FontAtlas;
-    create(charRanges: number[], fontFace: FontFace, bitmapSize: number): FontAtlas;
+    hasFontAtlas(fontFace: FontFace | string): boolean;
+    getFontAtlas(fontFace: FontFace | string): FontAtlas;
+    getOrCreate(charRanges: number[], fontFace: FontFace | string, bitmapSize: number): FontAtlas;
+    create(charRanges: number[], fontFace: FontFace | string, bitmapSize: number): FontAtlas;
     private renderAtlas;
 }
 export declare class FontAtlas {
-    readonly fontFace: FontFace;
-    readonly glyphWidth: number;
-    readonly glyphHeight: number;
+    readonly fontFaceFamily: string;
+    readonly bitmapFontSize: number;
+    readonly gridSize: number;
     readonly canvas: HTMLCanvasElement;
-    readonly glyphsData: Map<string, GlyphData>;
-    constructor(fontFace: FontFace, glyphWidth: number, glyphHeight: number);
+    readonly glyphs: Map<string, Glyph>;
+    constructor(fontFaceFamily: string, bitmapFontSize: number, gridSize: number);
 }
-export interface GlyphData {
-    x: number;
-    y: number;
+export interface Glyph {
+    id: number;
+    width: number;
 }

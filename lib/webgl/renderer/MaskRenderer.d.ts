@@ -11,6 +11,7 @@ export declare class MaskRenderer implements IRenderer {
     private modelMatrix;
     private textureMatrix;
     private readonly vertices;
+    private modelPosition;
     constructor(gl: WebGL2RenderingContext, programManager: IProgramManager);
     render(renderData: IMaskRenderData, cameraData: ICameraData, lastRender?: RenderDataType): void;
 }

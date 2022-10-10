@@ -1,8 +1,8 @@
 export interface IFontAtlasFactory {
-    hasFontAtlas(fontFace: FontFace): boolean;
-    getFontAtlas(fontFace: FontFace): FontAtlas;
-    getOrCreate(charRanges: number[], fontFace: FontFace, bitmapSize: number): FontAtlas;
-    create(charRanges: number[], fontFace: FontFace, bitmapSize: number): FontAtlas;
+    hasFontAtlas(fontFace: FontFace | string): boolean;
+    getFontAtlas(fontFace: FontFace | string): FontAtlas;
+    getOrCreate(charRanges: number[], fontFace: FontFace | string, bitmapSize: number): FontAtlas;
+    create(charRanges: number[], fontFace: FontFace | string, bitmapSize: number): FontAtlas;
 }
 
 export class FontAtlasFactory implements IFontAtlasFactory {
@@ -10,19 +10,19 @@ export class FontAtlasFactory implements IFontAtlasFactory {
     private chars: string[];
     private fontAtlas: Map<symbol, FontAtlas> = new Map<symbol, FontAtlas>();
 
-    public hasFontAtlas(fontFace: FontFace): boolean {
-        return this.fontAtlas.has(Symbol.for(fontFace.family));
+    public hasFontAtlas(fontFace: FontFace | string): boolean {
+        return this.fontAtlas.has(Symbol.for(fontFace instanceof FontFace ? fontFace.family : fontFace));
     }
 
-    public getFontAtlas(fontFace: FontFace): FontAtlas {
-        return this.fontAtlas.get(Symbol.for(fontFace.family));
+    public getFontAtlas(fontFace: FontFace | string): FontAtlas {
+        return this.fontAtlas.get(Symbol.for(fontFace instanceof FontFace ? fontFace.family : fontFace));
     }
 
-    public getOrCreate(charRanges: number[], fontFace: FontFace, bitmapSize: number): FontAtlas {
+    public getOrCreate(charRanges: number[], fontFace: FontFace | string, bitmapSize: number): FontAtlas {
         return this.getFontAtlas(fontFace) ?? this.create(charRanges, fontFace, bitmapSize);
     }
 
-    public create(charRanges: number[], fontFace: FontFace, bitmapSize: number): FontAtlas {
+    public create(charRanges: number[], fontFace: FontFace | string, bitmapSize: number): FontAtlas {
         this.bitmapSize = bitmapSize;
 
         this.chars = [];
@@ -32,24 +32,25 @@ export class FontAtlasFactory implements IFontAtlasFactory {
             }
         }
 
-        const fontAtlas = this.renderAtlas(fontFace);
-        this.fontAtlas.set(Symbol.for(fontFace.family), fontAtlas);
+        const fontAtlas = this.renderAtlas(fontFace instanceof FontFace ? fontFace.family : fontFace);
+        this.fontAtlas.set(Symbol.for(fontFace instanceof FontFace ? fontFace.family : fontFace), fontAtlas);
 
         return fontAtlas;
     }
 
-    private renderAtlas(fontFace: FontFace): FontAtlas {
-        const fontAtlas: FontAtlas = new FontAtlas(fontFace, this.bitmapSize, this.bitmapSize);
-
-        fontAtlas.canvas.width = Math.round(Math.sqrt(this.chars.length)) * this.bitmapSize;
-        fontAtlas.canvas.height = fontAtlas.canvas.width;
+    private renderAtlas(fontFaceFamily: string): FontAtlas {
+        const fontAtlas: FontAtlas = new FontAtlas(
+            fontFaceFamily,
+            this.bitmapSize,
+            Math.ceil(Math.sqrt(this.chars.length))
+        );
 
         const ctx: CanvasRenderingContext2D = fontAtlas.canvas.getContext("2d");
 
         ctx.clearRect(0, 0, fontAtlas.canvas.width, fontAtlas.canvas.height);
         ctx.textBaseline = "top";
         ctx.fillStyle = "#000";
-        ctx.font = `${this.bitmapSize}px ${fontFace.family}`;
+        ctx.font = `${this.bitmapSize}px ${fontFaceFamily}`;
 
         let x: number = 0;
         let y: number = 0;
@@ -57,9 +58,10 @@ export class FontAtlasFactory implements IFontAtlasFactory {
         for (let i = 0; i < this.chars.length; i++) {
             ctx.fillText(this.chars[i], x, y);
 
-            fontAtlas.glyphsData.set(this.chars[i], {
-                x: x,
-                y: y,
+            // TODO: improve the glyph data using the measureText data
+            fontAtlas.glyphs.set(this.chars[i], {
+                id: i,
+                width: ctx.measureText(this.chars[i]).width,
             });
 
             if ((x += this.bitmapSize) > fontAtlas.canvas.width - this.bitmapSize) {
@@ -74,16 +76,19 @@ export class FontAtlasFactory implements IFontAtlasFactory {
 
 export class FontAtlas {
     public readonly canvas: HTMLCanvasElement = document.createElement("canvas");
-    public readonly glyphsData: Map<string, GlyphData> = new Map<string, GlyphData>();
+    public readonly glyphs: Map<string, Glyph> = new Map<string, Glyph>();
 
     constructor(
-        public readonly fontFace: FontFace,
-        public readonly glyphWidth: number,
-        public readonly glyphHeight: number
-    ) {}
+        public readonly fontFaceFamily: string,
+        public readonly bitmapFontSize: number,
+        public readonly gridSize: number
+    ) {
+        this.canvas.width = this.gridSize * this.bitmapFontSize;
+        this.canvas.height = this.canvas.width;
+    }
 }
 
-export interface GlyphData {
-    x: number;
-    y: number;
+export interface Glyph {
+    id: number;
+    width: number;
 }

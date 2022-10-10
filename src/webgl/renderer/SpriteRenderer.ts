@@ -1,6 +1,7 @@
+import { Vector2 } from "angry-pixel-math";
 import { mat4 } from "gl-matrix";
 import { ICameraData } from "../../CameraData";
-import { RenderDataType } from "../../renderData/RenderData";
+import { RenderDataType, RenderLocation } from "../../renderData/RenderData";
 import { ISpriteRenderData } from "../../renderData/SpriteRenderData";
 import { hexToRgba } from "../../utils/hexToRgba";
 import { IProgramManager } from "../program/ProgramManager";
@@ -21,6 +22,7 @@ export class SpriteRenderer implements IRenderer {
     private texVertices: Float32Array;
 
     private lastTexture: WebGLTexture = null;
+    private modelPosition: Vector2 = new Vector2();
 
     constructor(
         private readonly gl: WebGL2RenderingContext,
@@ -62,7 +64,13 @@ export class SpriteRenderer implements IRenderer {
         }
 
         this.modelMatrix = mat4.identity(this.modelMatrix);
-        mat4.translate(this.modelMatrix, this.modelMatrix, [renderData.position.x, renderData.position.y, 0]);
+        Vector2.round(
+            this.modelPosition,
+            renderData.location === RenderLocation.WorldSpace
+                ? Vector2.subtract(this.modelPosition, renderData.position, cameraData.position)
+                : renderData.position
+        );
+        mat4.translate(this.modelMatrix, this.modelMatrix, [this.modelPosition.x, this.modelPosition.y, 0]);
         mat4.rotateZ(this.modelMatrix, this.modelMatrix, renderData.rotation ?? 0);
         mat4.scale(this.modelMatrix, this.modelMatrix, [
             renderData.width * (renderData.flipHorizontal ? -1 : 1),

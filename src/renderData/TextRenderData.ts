@@ -9,17 +9,20 @@ export enum TextOrientation {
 }
 
 export interface ITextRenderData extends IRenderData {
-    font: FontFace;
+    font: FontFace | string;
     text: string;
     fontSize: number;
-    smooth?: boolean;
     color?: string;
     lineSeparation?: number;
     letterSpacing?: number;
-    charRanges?: number[];
-    bitmapSize?: number;
-    bitmapOffset?: Vector2;
     orientation?: TextOrientation;
     rotation?: number;
     opacity?: number;
+    smooth?: boolean;
+    bitmap?: {
+        charRanges?: number[];
+        fontSize?: number;
+        margin?: Vector2;
+        spacing?: Vector2;
+    };
 }

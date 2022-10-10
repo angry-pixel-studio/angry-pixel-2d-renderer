@@ -1,3 +1,4 @@
+import { Vector2 } from "angry-pixel-math";
 import { IRenderData } from "./RenderData";
 
 export enum TilemapOrientation {
@@ -8,7 +9,6 @@ export enum TilemapOrientation {
 }
 
 export interface ITilemapRenderData extends IRenderData {
-    image: HTMLImageElement;
     tiles: number[];
     tilemap: {
         width: number;
@@ -16,9 +16,13 @@ export interface ITilemapRenderData extends IRenderData {
         tileHeight: number;
     };
     tileset: {
+        image: HTMLImageElement;
         width: number;
         tileWidth: number;
         tileHeight: number;
+        margin?: Vector2;
+        spacing?: Vector2;
+        correction?: Vector2;
     };
     smooth?: boolean;
     flipHorizontal?: boolean;
@@ -28,10 +32,18 @@ export interface ITilemapRenderData extends IRenderData {
     maskColor?: string;
     maskColorMix?: number;
     tintColor?: string;
-    textureCorrection?: number;
     orientation?: TilemapOrientation;
 }
 
-export interface ICulledTilemapRenderData extends ITilemapRenderData {
+export interface IProcessedTilemapData extends ITilemapRenderData {
     culledTiles: number[];
+    tilemap: {
+        height: number;
+        width: number;
+        tileWidth: number;
+        tileHeight: number;
+        realWidth: number;
+        realHeight: number;
+    };
+    renderPosition: Vector2;
 }

@@ -16,12 +16,12 @@ export declare class TextRenderer implements IRenderer {
     private textureMatrix;
     private posVertices;
     private texVertices;
-    private posVerticesSize;
     private lastTexture;
+    private textSize;
+    private modelPosition;
     constructor(gl: WebGL2RenderingContext, programManager: IProgramManager, textureManager: ITextureManager, fontAtlasFactory: IFontAtlasFactory);
     render(renderData: ITextRenderData, cameraData: ICameraData, lastRender: RenderDataType): void;
     private setDefaultValues;
     private generateTextVertices;
-    private getDimensions;
-    private getTranslationForOrientation;
+    private setPositionFromOrientation;
 }

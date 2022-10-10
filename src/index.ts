@@ -23,7 +23,7 @@ export * from "./renderData/MaskRenderData";
 export * from "./renderData/RenderData";
 export * from "./renderData/SpriteRenderData";
 export * from "./renderData/TextRenderData";
-export * from "./renderData/TilemapRenderData";
+export { TilemapOrientation, ITilemapRenderData } from "./renderData/TilemapRenderData";
 
 export const renderManagerFactory = (canvas: HTMLCanvasElement): IRenderManager => {
     const contextManager = new ContextManager(canvas);
