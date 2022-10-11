@@ -18,7 +18,7 @@ const DEFAULT_COLOR = "#000000";
 const DEFAULT_LETTER_SPACING = 0;
 const DEFAULT_LINE_SEPARATION = 0;
 const DEFAULT_ORIENTATION = TextOrientation.Center;
-const DEFAULT_OPACITY = 1;
+const DEFAULT_ALPHA = 1;
 const DEFAULT_ROTATION = 0;
 
 export class TextRenderer implements IRenderer {
@@ -88,7 +88,7 @@ export class TextRenderer implements IRenderer {
         this.gl.uniformMatrix4fv(this.programManager.modelMatrixUniform, false, this.modelMatrix);
         this.gl.uniformMatrix4fv(this.programManager.textureMatrixUniform, false, this.textureMatrix);
 
-        if (renderData.opacity < 1) {
+        if (renderData.alpha < 1) {
             this.gl.enable(this.gl.BLEND);
         } else {
             this.gl.disable(this.gl.BLEND);
@@ -108,7 +108,7 @@ export class TextRenderer implements IRenderer {
 
         this.gl.uniform1i(this.programManager.useTintColorUniform, 0);
         this.gl.uniform1i(this.programManager.renderTextureUniform, 1);
-        this.gl.uniform1f(this.programManager.alphaUniform, renderData.opacity);
+        this.gl.uniform1f(this.programManager.alphaUniform, renderData.alpha);
 
         const { r, g, b, a } = hexToRgba(renderData.color);
         this.gl.uniform4f(this.programManager.maskColorUniform, r, g, b, a);
@@ -136,7 +136,7 @@ export class TextRenderer implements IRenderer {
         renderData.color = renderData.color ?? DEFAULT_COLOR;
         renderData.letterSpacing = renderData.letterSpacing ?? DEFAULT_LETTER_SPACING;
         renderData.lineSeparation = renderData.lineSeparation ?? DEFAULT_LINE_SEPARATION;
-        renderData.opacity = renderData.opacity ?? DEFAULT_OPACITY;
+        renderData.alpha = renderData.alpha ?? DEFAULT_ALPHA;
         renderData.orientation = renderData.orientation ?? DEFAULT_ORIENTATION;
         renderData.rotation = renderData.rotation ?? DEFAULT_ROTATION;
     }

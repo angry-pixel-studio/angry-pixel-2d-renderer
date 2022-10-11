@@ -15,7 +15,7 @@ export interface ITextRenderData extends IRenderData {
     letterSpacing?: number;
     orientation?: TextOrientation;
     rotation?: number;
-    opacity?: number;
+    alpha?: number;
     smooth?: boolean;
     bitmap?: {
         charRanges?: number[];
