@@ -42,8 +42,11 @@ export class CullingManager implements ICullingManager {
     }
 
     private setObjectForResizeable({ position, width, height, rotation = 0 }: IResizeableRenderData): void {
-        const rotatedWidth = Math.sin(rotation) * height + Math.cos(rotation) * width;
-        const rotatedHeight = Math.sin(rotation) * width + Math.cos(rotation) * height;
+        const sin = Math.abs(Math.sin(rotation));
+        const cos = Math.abs(Math.cos(rotation));
+
+        const rotatedWidth = sin * height + cos * width;
+        const rotatedHeight = sin * width + cos * height;
 
         this.object.x = position.x - rotatedWidth / 2;
         this.object.x1 = position.x + rotatedWidth / 2;

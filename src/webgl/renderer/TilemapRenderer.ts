@@ -49,6 +49,8 @@ export class TilemapRenderer implements IRenderer {
         this.processTileset(renderData);
         this.generateVertices(renderData);
 
+        if (this.posVertices.length === 0) return;
+
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.programManager.positionBuffer);
         this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(this.posVertices), this.gl.DYNAMIC_DRAW);
 

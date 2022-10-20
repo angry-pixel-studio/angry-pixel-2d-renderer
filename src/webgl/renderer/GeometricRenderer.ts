@@ -117,7 +117,13 @@ export class GeometricRenderer implements IRenderer {
         this.gl.bufferData(this.gl.ARRAY_BUFFER, this.circumferenceVertices, this.gl.DYNAMIC_DRAW);
 
         this.modelMatrix = mat4.identity(this.modelMatrix);
-        mat4.translate(this.modelMatrix, this.modelMatrix, [renderData.position.x, renderData.position.y, 0]);
+        Vector2.round(
+            this.modelPosition,
+            renderData.location === RenderLocation.WorldSpace
+                ? Vector2.subtract(this.modelPosition, renderData.position, cameraData.position)
+                : renderData.position
+        );
+        mat4.translate(this.modelMatrix, this.modelMatrix, [this.modelPosition.x, this.modelPosition.y, 0]);
         mat4.scale(this.modelMatrix, this.modelMatrix, [renderData.radius, renderData.radius, 1]);
 
         setProjectionMatrix(this.projectionMatrix, this.gl, cameraData, renderData.location);
