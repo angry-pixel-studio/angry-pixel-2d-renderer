@@ -1,6 +1,6 @@
 {
     "name": "angry-pixel-2d-renderer",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "description": "WebGL rendering engine",
     "main": "lib/index.js",
     "types": "lib/index.d.ts",
@@ -38,7 +38,7 @@
         "typescript": "^4.8.3"
     },
     "dependencies": {
-        "angry-pixel-math": "^1.0.1",
+        "angry-pixel-math": "^1.0.2",
         "gl-matrix": "^3.4.3"
     }
 }

@@ -5,7 +5,7 @@ import { terser } from "rollup-plugin-terser";
 
 const builder = (format, filename) => ({
     exports: "named",
-    name: "AngryPixelMath",
+    name: "AngryPixel2dRenderer",
     file: "lib/" + filename,
     format,
 });
