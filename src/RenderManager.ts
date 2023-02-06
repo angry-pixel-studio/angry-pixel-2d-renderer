@@ -11,6 +11,7 @@ export interface IRenderManager {
     render(): void;
     clearData(): void;
     clearScreen(hexColor: string): void;
+    preloadTexture(image: HTMLImageElement, smooth?: boolean): void;
 }
 
 export class RenderManager implements IRenderManager {
@@ -57,5 +58,9 @@ export class RenderManager implements IRenderManager {
 
     public clearScreen(hexColor: string): void {
         this.webglManager.clearCanvas(hexColor);
+    }
+
+    public preloadTexture(image: HTMLImageElement): void {
+        this.webglManager.createTexture(image);
     }
 }

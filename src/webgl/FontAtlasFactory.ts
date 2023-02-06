@@ -11,11 +11,11 @@ export class FontAtlasFactory implements IFontAtlasFactory {
     private fontAtlas: Map<symbol, FontAtlas> = new Map<symbol, FontAtlas>();
 
     public hasFontAtlas(fontFace: FontFace | string): boolean {
-        return this.fontAtlas.has(Symbol.for(fontFace instanceof FontFace ? fontFace.family : fontFace));
+        return this.fontAtlas.has(this.symbol(fontFace));
     }
 
     public getFontAtlas(fontFace: FontFace | string): FontAtlas {
-        return this.fontAtlas.get(Symbol.for(fontFace instanceof FontFace ? fontFace.family : fontFace));
+        return this.fontAtlas.get(this.symbol(fontFace));
     }
 
     public getOrCreate(charRanges: number[], fontFace: FontFace | string, bitmapSize: number): FontAtlas {
@@ -33,9 +33,13 @@ export class FontAtlasFactory implements IFontAtlasFactory {
         }
 
         const fontAtlas = this.renderAtlas(fontFace instanceof FontFace ? fontFace.family : fontFace);
-        this.fontAtlas.set(Symbol.for(fontFace instanceof FontFace ? fontFace.family : fontFace), fontAtlas);
+        this.fontAtlas.set(this.symbol(fontFace), fontAtlas);
 
         return fontAtlas;
+    }
+
+    private symbol(fontFace: FontFace | string): symbol {
+        return Symbol.for(fontFace instanceof FontFace ? fontFace.family : fontFace);
     }
 
     private renderAtlas(fontFaceFamily: string): FontAtlas {

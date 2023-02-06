@@ -1,4 +1,4 @@
-import { mat4, ReadonlyVec3 } from "gl-matrix";
+import { mat4 } from "gl-matrix";
 import { Vector2 } from "angry-pixel-math";
 import { ICameraData } from "../../CameraData";
 import { RenderDataType, RenderLocation } from "../../renderData/RenderData";
@@ -20,6 +20,8 @@ const DEFAULT_LINE_SEPARATION = 0;
 const DEFAULT_ORIENTATION = TextOrientation.Center;
 const DEFAULT_ALPHA = 1;
 const DEFAULT_ROTATION = 0;
+
+const TEXTURE_PREFIX = "FontFamily:";
 
 export class TextRenderer implements IRenderer {
     public readonly type: RenderDataType = RenderDataType.Text;
@@ -95,7 +97,7 @@ export class TextRenderer implements IRenderer {
         }
 
         const texture = this.textureManager.getOrCreateTextureFromCanvas(
-            fontAtlas.fontFaceFamily,
+            TEXTURE_PREFIX + fontAtlas.fontFaceFamily,
             fontAtlas.canvas,
             renderData.smooth
         );

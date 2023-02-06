@@ -36,6 +36,7 @@ export const renderManagerFactory = (canvas: HTMLCanvasElement): IRenderManager 
     const webglManager = new WebGLManager(
         gl,
         programManager,
+        textureManager,
         new Map<RenderDataType, IRenderer>([
             [RenderDataType.Sprite, new SpriteRenderer(gl, programManager, textureManager)],
             [RenderDataType.Text, new TextRenderer(gl, programManager, textureManager, new FontAtlasFactory())],
