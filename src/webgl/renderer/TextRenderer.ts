@@ -52,7 +52,7 @@ export class TextRenderer implements IRenderer {
     }
 
     public render(renderData: ITextRenderData, cameraData: ICameraData, lastRender: RenderDataType): void {
-        if (!renderData.text) return;
+        if (!renderData.text) throw new Error("Nothing to render");
 
         this.setDefaultValues(renderData);
 

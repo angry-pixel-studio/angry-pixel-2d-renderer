@@ -24,8 +24,12 @@ export class WebGLManager implements IWebGLManager {
     }
 
     public render(renderData: IRenderData, cameraData: ICameraData): void {
-        this.renderers.get(renderData.type).render(renderData, cameraData, this.lastRender);
-        this.lastRender = renderData.type;
+        try {
+            this.renderers.get(renderData.type).render(renderData, cameraData, this.lastRender);
+            this.lastRender = renderData.type;
+        } catch (error: unknown) {
+            return;
+        }
     }
 
     public clearCanvas(hexColor: string): void {

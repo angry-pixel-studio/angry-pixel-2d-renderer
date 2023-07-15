@@ -46,10 +46,12 @@ export class TilemapRenderer implements IRenderer {
     }
 
     public render(renderData: IProcessedTilemapData, cameraData: ICameraData, lastRender?: RenderDataType): void {
+        if (renderData.culledTiles.reduce((acc, tile) => acc + tile, 0) === 0) throw new Error("Nothing to render");
+
         this.processTileset(renderData);
         this.generateVertices(renderData);
 
-        if (this.posVertices.length === 0) return;
+        if (this.posVertices.length === 0) throw new Error("Nothing to render");
 
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.programManager.positionBuffer);
         this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(this.posVertices), this.gl.DYNAMIC_DRAW);
