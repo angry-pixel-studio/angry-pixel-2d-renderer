@@ -128,6 +128,7 @@ export class CullingManager implements ICullingManager {
         this.setViewport(cameraData, renderData.location);
 
         switch (renderData.type) {
+            case RenderDataType.Video:
             case RenderDataType.Mask:
             case RenderDataType.Sprite:
                 this.setObjectForResizeable(renderData as IResizeableRenderData);
