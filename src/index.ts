@@ -12,6 +12,7 @@ import { MaskRenderer } from "./webgl/renderer/MaskRenderer";
 import { SpriteRenderer } from "./webgl/renderer/SpriteRenderer";
 import { TextRenderer } from "./webgl/renderer/TextRenderer";
 import { TilemapRenderer } from "./webgl/renderer/TilemapRenderer";
+import { VideoRenderer } from "./webgl/renderer/VideoRenderer";
 import { TextureFactory } from "./webgl/texture/TextureFactory";
 import { TextureManager } from "./webgl/texture/TextureManager";
 import { WebGLManager } from "./webgl/WebGLManager";
@@ -23,6 +24,7 @@ export * from "./renderData/MaskRenderData";
 export * from "./renderData/RenderData";
 export * from "./renderData/SpriteRenderData";
 export * from "./renderData/TextRenderData";
+export * from "./renderData/VideoRenderData";
 export { TilemapOrientation, ITilemapRenderData } from "./renderData/TilemapRenderData";
 
 export const renderManagerFactory = (canvas: HTMLCanvasElement): IRenderManager => {
@@ -43,6 +45,7 @@ export const renderManagerFactory = (canvas: HTMLCanvasElement): IRenderManager 
             [RenderDataType.Tilemap, new TilemapRenderer(gl, programManager, textureManager)],
             [RenderDataType.Geometric, new GeometricRenderer(gl, programManager)],
             [RenderDataType.Mask, new MaskRenderer(gl, programManager)],
+            [RenderDataType.Video, new VideoRenderer(gl, programManager, textureManager)],
         ])
     );
 

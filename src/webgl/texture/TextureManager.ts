@@ -5,6 +5,8 @@ export interface ITextureManager {
     createTextureFromImage(image: HTMLImageElement, smooth?: boolean): WebGLTexture;
     getOrCreateTextureFromCanvas(name: string, canvas: HTMLCanvasElement, smooth?: boolean): WebGLTexture;
     createTextureFromCanvas(name: string, canvas: HTMLCanvasElement, smooth?: boolean): WebGLTexture;
+    getOrCreateTextureFromVideo(video: HTMLVideoElement): WebGLTexture;
+    createTextureFromVideo(video: HTMLVideoElement): WebGLTexture;
 }
 
 export class TextureManager implements ITextureManager {
@@ -32,6 +34,18 @@ export class TextureManager implements ITextureManager {
         const texture: WebGLTexture = this.textureFactory.createFromCanvas(canvas, smooth);
 
         this.textures.set(Symbol.for(name), texture);
+
+        return texture;
+    }
+
+    public getOrCreateTextureFromVideo(video: HTMLVideoElement): WebGLTexture {
+        return this.textures.get(Symbol.for(video.src)) ?? this.createTextureFromVideo(video);
+    }
+
+    public createTextureFromVideo(video: HTMLVideoElement): WebGLTexture {
+        const texture: WebGLTexture = this.textureFactory.createPixelTexture();
+
+        this.textures.set(Symbol.for(video.src), texture);
 
         return texture;
     }

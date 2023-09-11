@@ -11,6 +11,7 @@ export enum RenderDataType {
     Tilemap,
     Mask,
     Geometric,
+    Video,
 }
 
 export interface IRenderData {
